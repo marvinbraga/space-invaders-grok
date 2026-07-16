@@ -7,6 +7,7 @@ from space_invaders.domain.constants import (
     ALIEN_WIDTH,
     DROP_DISTANCE,
     EDGE_MARGIN,
+    FORMATION_STEP_PIXELS,
     INVASION_Y,
     PLAYFIELD_WIDTH,
 )
@@ -20,7 +21,7 @@ class AlienFormation:
     def __init__(self, aliens: list[Alien]) -> None:
         self._aliens = aliens
         self._direction = Direction.RIGHT
-        self._step_pixels = 2.0
+        self._step_pixels = FORMATION_STEP_PIXELS
         self._pending_drop = False
 
     @property
