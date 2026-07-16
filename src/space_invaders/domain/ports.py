@@ -1,0 +1,23 @@
+"""Outbound ports (Protocols) — domain never imports adapters."""
+
+from typing import Protocol
+
+
+class ScoreRepository(Protocol):
+    def load_high_score(self) -> int: ...
+
+    def save_high_score(self, score: int) -> None: ...
+
+
+class AudioPort(Protocol):
+    def play(self, sound_id: str) -> None: ...
+
+    def set_muted(self, muted: bool) -> None: ...
+
+    def is_muted(self) -> bool: ...
+
+    def toggle_mute(self) -> bool: ...
+
+
+class ClockPort(Protocol):
+    def now(self) -> float: ...
