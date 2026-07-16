@@ -6,6 +6,11 @@ import pygame
 
 from space_invaders.domain.commands import CommandKind, InputCommand
 
+_NAV_UP = frozenset({pygame.K_UP, pygame.K_w})
+_NAV_DOWN = frozenset({pygame.K_DOWN, pygame.K_s})
+_MOVE_LEFT = frozenset({pygame.K_LEFT, pygame.K_a})
+_MOVE_RIGHT = frozenset({pygame.K_RIGHT, pygame.K_d})
+
 
 class PygameInputAdapter:
     """Translates keyboard events into domain commands (Command pattern edge)."""
@@ -24,10 +29,30 @@ class PygameInputAdapter:
     def _keydown(self, event: pygame.event.Event) -> list[InputCommand]:
         key = event.key
         mods = pygame.key.get_mods()
-        if key in (pygame.K_LEFT, pygame.K_a):
-            return [InputCommand(CommandKind.MOVE_LEFT)]
-        if key in (pygame.K_RIGHT, pygame.K_d):
-            return [InputCommand(CommandKind.MOVE_RIGHT)]
+        motion = self._motion_down(key)
+        if motion:
+            return motion
+        action = self._action_down(key, mods)
+        return action if action else []
+
+    def _motion_down(self, key: int) -> list[InputCommand]:
+        if key in _NAV_UP:
+            return [InputCommand(CommandKind.MENU_UP)]
+        if key in _NAV_DOWN:
+            return [InputCommand(CommandKind.MENU_DOWN)]
+        if key in _MOVE_LEFT:
+            return [
+                InputCommand(CommandKind.MOVE_LEFT),
+                InputCommand(CommandKind.MENU_UP),
+            ]
+        if key in _MOVE_RIGHT:
+            return [
+                InputCommand(CommandKind.MOVE_RIGHT),
+                InputCommand(CommandKind.MENU_DOWN),
+            ]
+        return []
+
+    def _action_down(self, key: int, mods: int) -> list[InputCommand]:
         if key == pygame.K_SPACE:
             return [InputCommand(CommandKind.FIRE)]
         if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
@@ -46,8 +71,8 @@ class PygameInputAdapter:
 
     def _keyup(self, event: pygame.event.Event) -> list[InputCommand]:
         key = event.key
-        if key in (pygame.K_LEFT, pygame.K_a):
+        if key in _MOVE_LEFT:
             return [InputCommand(CommandKind.STOP_LEFT)]
-        if key in (pygame.K_RIGHT, pygame.K_d):
+        if key in _MOVE_RIGHT:
             return [InputCommand(CommandKind.STOP_RIGHT)]
         return []

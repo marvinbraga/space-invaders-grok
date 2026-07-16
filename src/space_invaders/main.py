@@ -11,14 +11,17 @@ from space_invaders.adapters.audio import NullAudio, PygameAudioAdapter
 from space_invaders.adapters.input_adapter import PygameInputAdapter
 from space_invaders.adapters.renderer import WINDOW_H, WINDOW_W, PygameRenderer
 from space_invaders.adapters.score_repository import FileScoreRepository
+from space_invaders.adapters.settings_repository import FileSettingsRepository
 from space_invaders.application.audio_events import AudioEventBridge
 from space_invaders.application.high_score import HighScoreService
+from space_invaders.application.settings import SettingsService
 from space_invaders.domain.game import GameSession
 from space_invaders.domain.states import Phase
 
 _FPS = 60
 _DATA_DIR = Path.home() / ".local" / "share" / "space-invaders-grok"
 _HIGH_SCORE_PATH = _DATA_DIR / "highscore.json"
+_SETTINGS_PATH = _DATA_DIR / "settings.json"
 _PACKAGE_ROOT = Path(__file__).resolve().parent.parent.parent
 _SOUNDS_DIR = _PACKAGE_ROOT / "assets" / "sounds"
 
@@ -52,8 +55,11 @@ def run() -> int:
     high_scores = HighScoreService(score_repo)
     hi = high_scores.load()
 
+    settings = SettingsService(FileSettingsRepository(_SETTINGS_PATH))
+    difficulty = settings.load_difficulty()
+
     audio = _build_audio(_resolve_sounds_dir())
-    session = GameSession(high_score=hi)
+    session = GameSession(high_score=hi, difficulty_level=difficulty)
     audio_bridge = AudioEventBridge(audio)
     session.events.subscribe(audio_bridge)
 
@@ -71,9 +77,12 @@ def run() -> int:
         if session.consume_mute_toggle():
             audio.toggle_mute()
 
+        if session.consume_settings_dirty():
+            settings.save_difficulty(session.difficulty_level)
+
         session.update(dt)
 
-        if session.phase is Phase.MENU or session.phase is Phase.GAME_OVER:
+        if session.phase in (Phase.MENU, Phase.GAME_OVER, Phase.SETTINGS):
             new_hi = high_scores.save_if_higher(session.score, session.high_score)
             session.sync_high_score(new_hi)
 
@@ -81,6 +90,7 @@ def run() -> int:
 
         if session.quit_requested:
             high_scores.save_if_higher(session.score, session.high_score)
+            settings.save_difficulty(session.difficulty_level)
             running = False
 
     pygame.quit()

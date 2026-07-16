@@ -24,10 +24,15 @@ from space_invaders.domain.constants import (
     PLAYFIELD_WIDTH,
 )
 from space_invaders.domain.game import GameSession
-from space_invaders.domain.states import Phase
+from space_invaders.domain.states import MenuOption, Phase
 
 WINDOW_W: Final[int] = PLAYFIELD_WIDTH * SCALE
 WINDOW_H: Final[int] = PLAYFIELD_HEIGHT * SCALE
+
+_MENU_LABELS: Final[dict[MenuOption, str]] = {
+    MenuOption.PLAY: "JOGAR",
+    MenuOption.SETTINGS: "CONFIGURACOES",
+}
 
 
 class PygameRenderer:
@@ -49,6 +54,8 @@ class PygameRenderer:
 
         if session.phase is Phase.MENU:
             self._draw_menu(session)
+        elif session.phase is Phase.SETTINGS:
+            self._draw_settings(session)
         elif session.phase is Phase.GAME_OVER:
             self._draw_world(session)
             self._draw_hud(session, muted)
@@ -117,43 +124,76 @@ class PygameRenderer:
         hi_s = f"HI-SCORE  {session.high_score:04d}"
         lives_s = f"LIVES  {session.player.lives}"
         wave_s = f"WAVE  {session.wave}"
+        diff_s = session.difficulty_level.label
         self._blit_text(score_s, 8, 4, COLOR_TEXT)
         # Single HI-SCORE, right-aligned, no duplication
         hi_surf = self._font.render(hi_s, COLOR_HI)
         self._screen.blit(hi_surf, (WINDOW_W - hi_surf.get_width() - 8, 4))
         self._blit_text(lives_s, 8, WINDOW_H - 22, COLOR_TEXT)
-        self._blit_text(wave_s, WINDOW_W // 2 - 40, WINDOW_H - 22, COLOR_DIM)
+        self._blit_text(wave_s, WINDOW_W // 2 - 50, WINDOW_H - 22, COLOR_DIM)
+        self._blit_text(diff_s, WINDOW_W // 2 + 50, WINDOW_H - 22, COLOR_DIM)
         if muted:
             self._blit_text("MUTE", WINDOW_W - 60, WINDOW_H - 22, COLOR_HI)
 
     def _draw_menu(self, session: GameSession) -> None:
         title = self._font_lg.render("SPACE INVADERS", COLOR_HI)
-        self._screen.blit(title, ((WINDOW_W - title.get_width()) // 2, 70))
+        self._screen.blit(title, ((WINDOW_W - title.get_width()) // 2, 56))
         sub = self._font.render("TAITO 1978 CLASSIC", COLOR_DIM)
-        self._screen.blit(sub, ((WINDOW_W - sub.get_width()) // 2, 110))
+        self._screen.blit(sub, ((WINDOW_W - sub.get_width()) // 2, 92))
 
         hi = self._font.render(f"HI-SCORE  {session.high_score:04d}", COLOR_HI)
-        self._screen.blit(hi, ((WINDOW_W - hi.get_width()) // 2, 150))
+        self._screen.blit(hi, ((WINDOW_W - hi.get_width()) // 2, 124))
 
-        lines = [
-            "ENTER / SPACE  START",
-            "ARROWS OR A D  MOVE",
-            "SPACE          FIRE",
-            "P              PAUSE",
-            "CTRL+R         RESTART",
-            "M              MUTE",
-            "ESC            MENU",
-        ]
-        y = 190
-        for line in lines:
-            self._blit_text(line, WINDOW_W // 2 - 120, y, COLOR_TEXT)
-            y += 22
-
-        tip = self._font_sm.render(
-            "DESTROY THE FORMATION. DONT LET THEM LAND.",
+        diff = self._font_sm.render(
+            f"DIFICULDADE  {session.difficulty_level.label}",
             COLOR_DIM,
         )
-        self._screen.blit(tip, ((WINDOW_W - tip.get_width()) // 2, WINDOW_H - 40))
+        self._screen.blit(diff, ((WINDOW_W - diff.get_width()) // 2, 148))
+
+        y = 180
+        for index, option in enumerate(session.menu_options):
+            label = _MENU_LABELS[option]
+            selected = index == session.menu_index
+            prefix = "> " if selected else "  "
+            color = COLOR_HI if selected else COLOR_TEXT
+            self._blit_text(f"{prefix}{label}", WINDOW_W // 2 - 90, y, color)
+            y += 28
+
+        hints = [
+            "SETAS / W S  NAVEGAR",
+            "ENTER/SPACE SELECIONAR",
+            "M MUTE · ESC SAIR MENU",
+        ]
+        y = WINDOW_H - 90
+        for line in hints:
+            surf = self._font_sm.render(line, COLOR_DIM)
+            self._screen.blit(surf, ((WINDOW_W - surf.get_width()) // 2, y))
+            y += 16
+
+    def _draw_settings(self, session: GameSession) -> None:
+        title = self._font_lg.render("CONFIGURACOES", COLOR_HI)
+        self._screen.blit(title, ((WINDOW_W - title.get_width()) // 2, 70))
+        sub = self._font.render("NIVEL DE DIFICULDADE", COLOR_DIM)
+        self._screen.blit(sub, ((WINDOW_W - sub.get_width()) // 2, 110))
+
+        y = 160
+        for index, level in enumerate(session.settings_options):
+            selected = index == session.settings_index
+            active = level is session.difficulty_level
+            prefix = "> " if selected else "  "
+            mark = " *" if active and not selected else ""
+            if active and selected:
+                mark = " *"
+            color = COLOR_HI if selected else COLOR_TEXT
+            line = f"{prefix}{level.label}{mark}"
+            self._blit_text(line, WINDOW_W // 2 - 100, y, color)
+            y += 28
+
+        tip = self._font_sm.render(
+            "ENTER CONFIRMA · ESC VOLTA",
+            COLOR_DIM,
+        )
+        self._screen.blit(tip, ((WINDOW_W - tip.get_width()) // 2, WINDOW_H - 50))
 
     def _draw_game_over(self, session: GameSession) -> None:
         msg = "GAME OVER"

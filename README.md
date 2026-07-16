@@ -36,6 +36,14 @@ uv run python -m space_invaders
 
 ## Controls
 
+No menu inicial:
+- **↑/↓** ou **W/S** (ou **←/→**): navegar
+- **Enter** / **Space**: selecionar (**JOGAR** ou **CONFIGURACOES**)
+- Em **CONFIGURACOES**: escolher **FACIL / MEDIO / DIFICIL / DIFICILIMO** (persistido em `~/.local/share/space-invaders-grok/settings.json`)
+- **ESC**: voltar ao menu
+
+Durante o jogo:
+
 | Key | Action |
 |-----|--------|
 | ← → or A D | Move |

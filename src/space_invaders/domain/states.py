@@ -13,9 +13,15 @@ if TYPE_CHECKING:
 
 class Phase(Enum):
     MENU = auto()
+    SETTINGS = auto()
     PLAYING = auto()
     PAUSED = auto()
     GAME_OVER = auto()
+
+
+class MenuOption(Enum):
+    PLAY = 0
+    SETTINGS = 1
 
 
 class GameState(Protocol):
@@ -32,14 +38,44 @@ class MenuState:
     phase: Phase = Phase.MENU
 
     def enter(self, session: GameSession) -> None:
-        del session  # no-op; session already idle on menu
+        session.reset_menu_cursor()
 
     def handle(self, session: GameSession, command: InputCommand) -> None:
-        if command.kind in (CommandKind.START, CommandKind.FIRE):
-            session.begin_play()
-        elif command.kind == CommandKind.QUIT:
+        kind = command.kind
+        if kind == CommandKind.MENU_UP:
+            session.menu_cursor_up()
+        elif kind == CommandKind.MENU_DOWN:
+            session.menu_cursor_down()
+        elif kind in (CommandKind.START, CommandKind.FIRE):
+            session.activate_menu_selection()
+        elif kind == CommandKind.QUIT:
             session.request_quit()
-        elif command.kind == CommandKind.TOGGLE_MUTE:
+        elif kind == CommandKind.TOGGLE_MUTE:
+            session.toggle_mute_flag()
+
+    def update(self, session: GameSession, dt: float) -> None:
+        del session, dt
+
+
+class SettingsState:
+    phase: Phase = Phase.SETTINGS
+
+    def enter(self, session: GameSession) -> None:
+        session.sync_settings_cursor()
+
+    def handle(self, session: GameSession, command: InputCommand) -> None:
+        kind = command.kind
+        if kind == CommandKind.MENU_UP:
+            session.settings_cursor_up()
+        elif kind == CommandKind.MENU_DOWN:
+            session.settings_cursor_down()
+        elif kind in (CommandKind.START, CommandKind.FIRE):
+            session.apply_settings_selection()
+        elif kind == CommandKind.TO_MENU:
+            session.transition_to(MenuState())
+        elif kind == CommandKind.QUIT:
+            session.request_quit()
+        elif kind == CommandKind.TOGGLE_MUTE:
             session.toggle_mute_flag()
 
     def update(self, session: GameSession, dt: float) -> None:
@@ -136,3 +172,15 @@ class GameOverState:
 
     def update(self, session: GameSession, dt: float) -> None:
         del session, dt
+
+
+__all__ = [
+    "GameOverState",
+    "GameState",
+    "MenuOption",
+    "MenuState",
+    "PausedState",
+    "Phase",
+    "PlayingState",
+    "SettingsState",
+]

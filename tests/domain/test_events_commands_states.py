@@ -81,6 +81,31 @@ class TestStateMachine:
         g.handle(InputCommand(CommandKind.QUIT))
         assert g.quit_requested
 
+    def test_settings_menu_and_difficulty_select(self) -> None:
+        from space_invaders.domain.strategies import DifficultyLevel
+
+        g = GameSession(difficulty_level=DifficultyLevel.MEDIUM)
+        assert g.phase is Phase.MENU
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.START))
+        assert g.phase is Phase.SETTINGS
+        # Move to VERY_HARD (index 3 from MEDIUM at index 1)
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.START))
+        assert g.phase is Phase.MENU
+        assert g.difficulty_level is DifficultyLevel.VERY_HARD
+        assert g.consume_settings_dirty()
+        assert not g.consume_settings_dirty()
+
+    def test_settings_esc_returns_menu(self) -> None:
+        g = GameSession()
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.START))
+        assert g.phase is Phase.SETTINGS
+        g.handle(InputCommand(CommandKind.TO_MENU))
+        assert g.phase is Phase.MENU
+
     def test_playing_movement_and_fire(self) -> None:
         bus = EventPublisher()
         c = _Collector()

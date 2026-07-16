@@ -15,7 +15,11 @@ from space_invaders.domain.factories import (
     DefaultFormationFactory,
     alien_type_for_row,
 )
-from space_invaders.domain.strategies import WaveDifficulty, difficulty_for_wave
+from space_invaders.domain.strategies import (
+    DifficultyLevel,
+    WaveDifficulty,
+    difficulty_for_wave,
+)
 from space_invaders.domain.value_objects import AlienType, Position
 
 
@@ -83,3 +87,22 @@ class TestWaveDifficulty:
 
     def test_ufo_rom_table_length(self) -> None:
         assert len(UFO_ROM_SCORES) == 15
+
+    def test_easy_slower_than_hard(self) -> None:
+        easy = difficulty_for_wave(1, DifficultyLevel.EASY)
+        hard = difficulty_for_wave(1, DifficultyLevel.HARD)
+        assert easy.step_interval(55, 55) > hard.step_interval(55, 55)
+        assert easy.alien_fire_interval() > hard.alien_fire_interval()
+        assert easy.alien_bullet_speed() < hard.alien_bullet_speed()
+        assert easy.max_alien_bullets() < hard.max_alien_bullets()
+
+    def test_very_hard_tougher_than_hard(self) -> None:
+        hard = difficulty_for_wave(2, DifficultyLevel.HARD)
+        brutal = difficulty_for_wave(2, DifficultyLevel.VERY_HARD)
+        assert brutal.step_interval(40, 55) < hard.step_interval(40, 55)
+        assert brutal.alien_fire_interval() < hard.alien_fire_interval()
+        assert brutal.max_alien_bullets() >= hard.max_alien_bullets()
+
+    def test_level_from_value_fallback(self) -> None:
+        assert DifficultyLevel.from_value("medium") is DifficultyLevel.MEDIUM
+        assert DifficultyLevel.from_value("nope") is DifficultyLevel.HARD

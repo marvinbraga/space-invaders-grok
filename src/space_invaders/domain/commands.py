@@ -19,6 +19,8 @@ class CommandKind(Enum):
     RESTART = auto()
     TO_MENU = auto()
     TOGGLE_MUTE = auto()
+    MENU_UP = auto()
+    MENU_DOWN = auto()
     QUIT = auto()
 
 
