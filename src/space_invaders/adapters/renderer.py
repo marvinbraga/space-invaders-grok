@@ -6,6 +6,7 @@ from typing import Final
 
 import pygame
 
+from space_invaders.adapters.bitmap_font import BitmapFont
 from space_invaders.adapters.sprites import (
     COLOR_BG,
     COLOR_BULLET_A,
@@ -33,9 +34,10 @@ class PygameRenderer:
     def __init__(self, screen: pygame.Surface) -> None:
         self._screen = screen
         self._sprites = SpriteBank()
-        self._font = pygame.font.SysFont("monospace", 18, bold=True)
-        self._font_lg = pygame.font.SysFont("monospace", 28, bold=True)
-        self._font_sm = pygame.font.SysFont("monospace", 14)
+        # Bitmap font — works without pygame.font / SDL_ttf
+        self._font = BitmapFont(pixel_size=2)
+        self._font_lg = BitmapFont(pixel_size=3)
+        self._font_sm = BitmapFont(pixel_size=1)
         self._march_frame = 0
         self._frame_tick = 0
 
@@ -55,7 +57,7 @@ class PygameRenderer:
             self._draw_world(session)
             self._draw_hud(session, muted)
             if session.phase is Phase.PAUSED:
-                self._draw_center("PAUSED", "P to resume · ESC menu")
+                self._draw_center("PAUSED", "P TO RESUME · ESC MENU")
 
         pygame.display.flip()
 
@@ -117,7 +119,7 @@ class PygameRenderer:
         wave_s = f"WAVE  {session.wave}"
         self._blit_text(score_s, 8, 4, COLOR_TEXT)
         # Single HI-SCORE, right-aligned, no duplication
-        hi_surf = self._font.render(hi_s, True, COLOR_HI)
+        hi_surf = self._font.render(hi_s, COLOR_HI)
         self._screen.blit(hi_surf, (WINDOW_W - hi_surf.get_width() - 8, 4))
         self._blit_text(lives_s, 8, WINDOW_H - 22, COLOR_TEXT)
         self._blit_text(wave_s, WINDOW_W // 2 - 40, WINDOW_H - 22, COLOR_DIM)
@@ -125,29 +127,32 @@ class PygameRenderer:
             self._blit_text("MUTE", WINDOW_W - 60, WINDOW_H - 22, COLOR_HI)
 
     def _draw_menu(self, session: GameSession) -> None:
-        title = self._font_lg.render("SPACE INVADERS", True, COLOR_HI)
+        title = self._font_lg.render("SPACE INVADERS", COLOR_HI)
         self._screen.blit(title, ((WINDOW_W - title.get_width()) // 2, 70))
-        sub = self._font.render("TAITO 1978 CLASSIC", True, COLOR_DIM)
+        sub = self._font.render("TAITO 1978 CLASSIC", COLOR_DIM)
         self._screen.blit(sub, ((WINDOW_W - sub.get_width()) // 2, 110))
 
-        hi = self._font.render(f"HI-SCORE  {session.high_score:04d}", True, COLOR_HI)
+        hi = self._font.render(f"HI-SCORE  {session.high_score:04d}", COLOR_HI)
         self._screen.blit(hi, ((WINDOW_W - hi.get_width()) // 2, 150))
 
         lines = [
-            "ENTER / SPACE  Start",
-            "← →  or  A D   Move",
-            "SPACE          Fire",
-            "P              Pause",
-            "Ctrl+R         Restart",
-            "M              Mute",
-            "ESC            Menu",
+            "ENTER / SPACE  START",
+            "ARROWS OR A D  MOVE",
+            "SPACE          FIRE",
+            "P              PAUSE",
+            "CTRL+R         RESTART",
+            "M              MUTE",
+            "ESC            MENU",
         ]
         y = 190
         for line in lines:
             self._blit_text(line, WINDOW_W // 2 - 120, y, COLOR_TEXT)
             y += 22
 
-        tip = self._font_sm.render("Destroy the formation. Don't let them land.", True, COLOR_DIM)
+        tip = self._font_sm.render(
+            "DESTROY THE FORMATION. DONT LET THEM LAND.",
+            COLOR_DIM,
+        )
         self._screen.blit(tip, ((WINDOW_W - tip.get_width()) // 2, WINDOW_H - 40))
 
     def _draw_game_over(self, session: GameSession) -> None:
@@ -155,14 +160,14 @@ class PygameRenderer:
         extra = f"SCORE {session.score:04d}"
         if session.score >= session.high_score and session.score > 0:
             extra += "  ·  NEW HI-SCORE!"
-        self._draw_center(msg, extra + "  ·  ENTER replay · ESC menu")
+        self._draw_center(msg, extra + "  ·  ENTER REPLAY · ESC MENU")
 
     def _draw_center(self, title: str, subtitle: str) -> None:
         overlay = pygame.Surface((WINDOW_W, WINDOW_H), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 140))
         self._screen.blit(overlay, (0, 0))
-        t = self._font_lg.render(title, True, COLOR_HI)
-        s = self._font_sm.render(subtitle, True, COLOR_TEXT)
+        t = self._font_lg.render(title, COLOR_HI)
+        s = self._font_sm.render(subtitle, COLOR_TEXT)
         self._screen.blit(t, ((WINDOW_W - t.get_width()) // 2, WINDOW_H // 2 - 30))
         self._screen.blit(s, ((WINDOW_W - s.get_width()) // 2, WINDOW_H // 2 + 10))
 
@@ -173,5 +178,5 @@ class PygameRenderer:
         y: int,
         color: tuple[int, int, int],
     ) -> None:
-        surf = self._font.render(text, True, color)
+        surf = self._font.render(text, color)
         self._screen.blit(surf, (x, y))
