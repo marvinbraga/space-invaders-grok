@@ -32,6 +32,7 @@ WINDOW_H: Final[int] = PLAYFIELD_HEIGHT * SCALE
 _MENU_LABELS: Final[dict[MenuOption, str]] = {
     MenuOption.PLAY: "JOGAR",
     MenuOption.SETTINGS: "CONFIGURACOES",
+    MenuOption.QUIT: "SAIR",
 }
 
 

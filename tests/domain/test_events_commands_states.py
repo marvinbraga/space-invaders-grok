@@ -106,6 +106,13 @@ class TestStateMachine:
         g.handle(InputCommand(CommandKind.TO_MENU))
         assert g.phase is Phase.MENU
 
+    def test_menu_quit_option(self) -> None:
+        g = GameSession()
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.START))
+        assert g.quit_requested
+
     def test_playing_movement_and_fire(self) -> None:
         bus = EventPublisher()
         c = _Collector()

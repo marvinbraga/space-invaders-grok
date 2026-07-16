@@ -22,6 +22,7 @@ class Phase(Enum):
 class MenuOption(Enum):
     PLAY = 0
     SETTINGS = 1
+    QUIT = 2
 
 
 class GameState(Protocol):

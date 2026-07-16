@@ -177,7 +177,7 @@ class GameSession:
 
     @property
     def menu_options(self) -> tuple[MenuOption, ...]:
-        return (MenuOption.PLAY, MenuOption.SETTINGS)
+        return (MenuOption.PLAY, MenuOption.SETTINGS, MenuOption.QUIT)
 
     @property
     def settings_options(self) -> tuple[DifficultyLevel, ...]:
@@ -251,8 +251,10 @@ class GameSession:
         selected = self.menu_options[self._menu_index]
         if selected is MenuOption.PLAY:
             self.begin_play()
-        else:
+        elif selected is MenuOption.SETTINGS:
             self.transition_to(SettingsState())
+        else:
+            self.request_quit()
 
     def sync_settings_cursor(self) -> None:
         levels = self.settings_options
