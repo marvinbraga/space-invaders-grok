@@ -105,3 +105,49 @@ class Score:
 
 
 MAX_HI_SCORE: Final[int] = 999_999
+
+
+class ThemeId(Enum):
+    """Player-selectable visual theme (persisted preference)."""
+
+    CLASSIC = "classic"
+    RETRO = "retro"
+    NEON = "neon"
+    ARCADE = "arcade"
+    MIDNIGHT = "midnight"
+
+    @property
+    def label(self) -> str:
+        return _THEME_LABELS[self]
+
+    @property
+    def short_label(self) -> str:
+        return _THEME_SHORT_LABELS[self]
+
+    @classmethod
+    def ordered(cls) -> tuple[ThemeId, ...]:
+        return (cls.CLASSIC, cls.RETRO, cls.NEON, cls.ARCADE, cls.MIDNIGHT)
+
+    @classmethod
+    def from_value(cls, raw: str) -> ThemeId:
+        try:
+            return cls(raw)
+        except ValueError:
+            return cls.CLASSIC
+
+
+_THEME_LABELS: Final[dict[ThemeId, str]] = {
+    ThemeId.CLASSIC: "CLASSICO",
+    ThemeId.RETRO: "RETRO",
+    ThemeId.NEON: "NEON",
+    ThemeId.ARCADE: "ARCADE",
+    ThemeId.MIDNIGHT: "MEIA-NOITE",
+}
+
+_THEME_SHORT_LABELS: Final[dict[ThemeId, str]] = {
+    ThemeId.CLASSIC: "CLS",
+    ThemeId.RETRO: "RTR",
+    ThemeId.NEON: "NEO",
+    ThemeId.ARCADE: "ARC",
+    ThemeId.MIDNIGHT: "MID",
+}

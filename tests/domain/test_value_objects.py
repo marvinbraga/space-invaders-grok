@@ -2,7 +2,7 @@
 
 import pytest
 
-from space_invaders.domain.value_objects import Position, Rect, Score, Size
+from space_invaders.domain.value_objects import Position, Rect, Score, Size, ThemeId
 
 
 class TestPosition:
@@ -60,3 +60,24 @@ class TestScore:
     def test_add_rejects_negative(self) -> None:
         with pytest.raises(ValueError):
             Score(10).add(-1)
+
+
+class TestThemeId:
+    def test_ordered_has_at_least_four_distinct(self) -> None:
+        ordered = ThemeId.ordered()
+        assert len(ordered) >= 4
+        assert len(set(ordered)) == len(ordered)
+        assert ThemeId.CLASSIC in ordered
+        assert ThemeId.RETRO in ordered
+        assert ThemeId.NEON in ordered
+        assert ThemeId.ARCADE in ordered
+
+    def test_from_value_and_fallback(self) -> None:
+        assert ThemeId.from_value("neon") is ThemeId.NEON
+        assert ThemeId.from_value("classic") is ThemeId.CLASSIC
+        assert ThemeId.from_value("nope") is ThemeId.CLASSIC
+
+    def test_labels(self) -> None:
+        assert ThemeId.CLASSIC.label
+        assert ThemeId.RETRO.short_label
+        assert ThemeId.CLASSIC.value == "classic"

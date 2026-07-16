@@ -57,9 +57,10 @@ def run() -> int:
 
     settings = SettingsService(FileSettingsRepository(_SETTINGS_PATH))
     difficulty = settings.load_difficulty()
+    theme = settings.load_theme()
 
     audio = _build_audio(_resolve_sounds_dir())
-    session = GameSession(high_score=hi, difficulty_level=difficulty)
+    session = GameSession(high_score=hi, difficulty_level=difficulty, theme_id=theme)
     audio_bridge = AudioEventBridge(audio)
     session.events.subscribe(audio_bridge)
 
@@ -80,9 +81,17 @@ def run() -> int:
         if session.consume_settings_dirty():
             settings.save_difficulty(session.difficulty_level)
 
+        if session.consume_theme_dirty():
+            settings.save_theme(session.theme_id)
+
         session.update(dt)
 
-        if session.phase in (Phase.MENU, Phase.GAME_OVER, Phase.SETTINGS):
+        if session.phase in (
+            Phase.MENU,
+            Phase.GAME_OVER,
+            Phase.SETTINGS,
+            Phase.THEME_SETTINGS,
+        ):
             new_hi = high_scores.save_if_higher(session.score, session.high_score)
             session.sync_high_score(new_hi)
 
@@ -91,6 +100,7 @@ def run() -> int:
         if session.quit_requested:
             high_scores.save_if_higher(session.score, session.high_score)
             settings.save_difficulty(session.difficulty_level)
+            settings.save_theme(session.theme_id)
             running = False
 
     pygame.quit()

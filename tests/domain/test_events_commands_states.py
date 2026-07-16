@@ -106,8 +106,57 @@ class TestStateMachine:
         g.handle(InputCommand(CommandKind.TO_MENU))
         assert g.phase is Phase.MENU
 
+    def test_theme_menu_and_theme_select(self) -> None:
+        from space_invaders.domain.value_objects import ThemeId
+
+        g = GameSession(theme_id=ThemeId.CLASSIC)
+        assert g.phase is Phase.MENU
+        # PLAY=0, SETTINGS=1, THEME=2
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.START))
+        assert g.phase is Phase.THEME_SETTINGS
+        # CLASSIC at 0 → NEON at 2
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.START))
+        assert g.phase is Phase.MENU
+        assert g.theme_id is ThemeId.NEON
+        assert g.consume_theme_dirty()
+        assert not g.consume_theme_dirty()
+
+    def test_theme_esc_returns_menu_without_change(self) -> None:
+        from space_invaders.domain.value_objects import ThemeId
+
+        g = GameSession(theme_id=ThemeId.RETRO)
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.START))
+        assert g.phase is Phase.THEME_SETTINGS
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.TO_MENU))
+        assert g.phase is Phase.MENU
+        assert g.theme_id is ThemeId.RETRO
+        assert not g.consume_theme_dirty()
+
+    def test_theme_same_selection_not_dirty(self) -> None:
+        from space_invaders.domain.value_objects import ThemeId
+
+        g = GameSession(theme_id=ThemeId.ARCADE)
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
+        g.handle(InputCommand(CommandKind.START))
+        assert g.phase is Phase.THEME_SETTINGS
+        # cursor already on ARCADE (index 3)
+        g.handle(InputCommand(CommandKind.START))
+        assert g.phase is Phase.MENU
+        assert g.theme_id is ThemeId.ARCADE
+        assert not g.consume_theme_dirty()
+
     def test_menu_quit_option(self) -> None:
         g = GameSession()
+        # PLAY, SETTINGS, THEME, QUIT — three downs to QUIT
+        g.handle(InputCommand(CommandKind.MENU_DOWN))
         g.handle(InputCommand(CommandKind.MENU_DOWN))
         g.handle(InputCommand(CommandKind.MENU_DOWN))
         g.handle(InputCommand(CommandKind.START))

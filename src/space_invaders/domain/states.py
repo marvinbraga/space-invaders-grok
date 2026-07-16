@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 class Phase(Enum):
     MENU = auto()
     SETTINGS = auto()
+    THEME_SETTINGS = auto()
     PLAYING = auto()
     PAUSED = auto()
     GAME_OVER = auto()
@@ -22,7 +23,8 @@ class Phase(Enum):
 class MenuOption(Enum):
     PLAY = 0
     SETTINGS = 1
-    QUIT = 2
+    THEME = 2
+    QUIT = 3
 
 
 class GameState(Protocol):
@@ -72,6 +74,31 @@ class SettingsState:
             session.settings_cursor_down()
         elif kind in (CommandKind.START, CommandKind.FIRE):
             session.apply_settings_selection()
+        elif kind == CommandKind.TO_MENU:
+            session.transition_to(MenuState())
+        elif kind == CommandKind.QUIT:
+            session.request_quit()
+        elif kind == CommandKind.TOGGLE_MUTE:
+            session.toggle_mute_flag()
+
+    def update(self, session: GameSession, dt: float) -> None:
+        del session, dt
+
+
+class ThemeSettingsState:
+    phase: Phase = Phase.THEME_SETTINGS
+
+    def enter(self, session: GameSession) -> None:
+        session.sync_theme_cursor()
+
+    def handle(self, session: GameSession, command: InputCommand) -> None:
+        kind = command.kind
+        if kind == CommandKind.MENU_UP:
+            session.theme_cursor_up()
+        elif kind == CommandKind.MENU_DOWN:
+            session.theme_cursor_down()
+        elif kind in (CommandKind.START, CommandKind.FIRE):
+            session.apply_theme_selection()
         elif kind == CommandKind.TO_MENU:
             session.transition_to(MenuState())
         elif kind == CommandKind.QUIT:
@@ -184,4 +211,5 @@ __all__ = [
     "Phase",
     "PlayingState",
     "SettingsState",
+    "ThemeSettingsState",
 ]

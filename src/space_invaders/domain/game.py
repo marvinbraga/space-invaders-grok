@@ -52,13 +52,14 @@ from space_invaders.domain.states import (
     Phase,
     PlayingState,
     SettingsState,
+    ThemeSettingsState,
 )
 from space_invaders.domain.strategies import (
     DifficultyLevel,
     DifficultyStrategy,
     difficulty_for_wave,
 )
-from space_invaders.domain.value_objects import Direction, Position, Score
+from space_invaders.domain.value_objects import Direction, Position, Score, ThemeId
 
 
 class WaveTemplate(ABC):
@@ -103,6 +104,7 @@ class GameSession:
         rng: random.Random | None = None,
         high_score: int = 0,
         difficulty_level: DifficultyLevel = DifficultyLevel.HARD,
+        theme_id: ThemeId = ThemeId.CLASSIC,
     ) -> None:
         self._events = events if events is not None else EventPublisher()
         self.formation_factory = (
@@ -118,6 +120,7 @@ class GameSession:
         self._rng = rng if rng is not None else random.Random()
         self._high_score = max(0, high_score)
         self._difficulty_level = difficulty_level
+        self._theme_id = theme_id
         self._score = Score(0)
         self._wave = 0
         self._player = Player(
@@ -140,8 +143,10 @@ class GameSession:
         self._quit_requested = False
         self._mute_toggled = False
         self._settings_dirty = False
+        self._theme_dirty = False
         self._menu_index = 0
         self._settings_index = DifficultyLevel.ordered().index(self._difficulty_level)
+        self._theme_index = ThemeId.ordered().index(self._theme_id)
         self._state: GameState = MenuState()
         self._game_over_finalized = False
 
@@ -168,6 +173,10 @@ class GameSession:
         return self._difficulty_level
 
     @property
+    def theme_id(self) -> ThemeId:
+        return self._theme_id
+
+    @property
     def menu_index(self) -> int:
         return self._menu_index
 
@@ -176,12 +185,20 @@ class GameSession:
         return self._settings_index
 
     @property
+    def theme_index(self) -> int:
+        return self._theme_index
+
+    @property
     def menu_options(self) -> tuple[MenuOption, ...]:
-        return (MenuOption.PLAY, MenuOption.SETTINGS, MenuOption.QUIT)
+        return (MenuOption.PLAY, MenuOption.SETTINGS, MenuOption.THEME, MenuOption.QUIT)
 
     @property
     def settings_options(self) -> tuple[DifficultyLevel, ...]:
         return DifficultyLevel.ordered()
+
+    @property
+    def theme_options(self) -> tuple[ThemeId, ...]:
+        return ThemeId.ordered()
 
     @property
     def player(self) -> Player:
@@ -229,6 +246,11 @@ class GameSession:
         self._settings_dirty = False
         return dirty
 
+    def consume_theme_dirty(self) -> bool:
+        dirty = self._theme_dirty
+        self._theme_dirty = False
+        return dirty
+
     def sync_high_score(self, high_score: int) -> None:
         """Allow composition root to reflect persisted HI-SCORE."""
         if high_score > self._high_score:
@@ -253,6 +275,8 @@ class GameSession:
             self.begin_play()
         elif selected is MenuOption.SETTINGS:
             self.transition_to(SettingsState())
+        elif selected is MenuOption.THEME:
+            self.transition_to(ThemeSettingsState())
         else:
             self.request_quit()
 
@@ -279,6 +303,29 @@ class GameSession:
         self._difficulty_level = level
         self._settings_index = DifficultyLevel.ordered().index(level)
         self._difficulty = difficulty_for_wave(max(1, self._wave), level)
+
+    def sync_theme_cursor(self) -> None:
+        themes = self.theme_options
+        self._theme_index = themes.index(self._theme_id)
+
+    def theme_cursor_up(self) -> None:
+        n = len(self.theme_options)
+        self._theme_index = (self._theme_index - 1) % n
+
+    def theme_cursor_down(self) -> None:
+        n = len(self.theme_options)
+        self._theme_index = (self._theme_index + 1) % n
+
+    def apply_theme_selection(self) -> None:
+        theme = self.theme_options[self._theme_index]
+        if theme is not self._theme_id:
+            self._theme_id = theme
+            self._theme_dirty = True
+        self.transition_to(MenuState())
+
+    def set_theme_id(self, theme_id: ThemeId) -> None:
+        self._theme_id = theme_id
+        self._theme_index = ThemeId.ordered().index(theme_id)
 
     # --- state / input ---
 
